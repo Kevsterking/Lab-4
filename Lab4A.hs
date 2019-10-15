@@ -7,7 +7,7 @@ import Test.QuickCheck
 
 -- Use the following simple data type for binary operators
 data BinOp = AddOp | MulOp
-
+  -- deriving Show
 --------------------------------------------------------------------------------
 -- * A1
 -- Define a data type Expr which represents three kinds of expression:
@@ -17,14 +17,16 @@ data BinOp = AddOp | MulOp
 -- x, your data type should not use String or Char anywhere, since this is
 -- not needed.
 
-data Expr = Expr -- change this!
+data Expr = Val Int | Op Expr BinOp Expr | Pow Int
 
 
 --------------------------------------------------------------------------------
 -- * A2
 -- Define the data type invariant that checks that exponents are never negative
 prop_Expr :: Expr -> Bool
-prop_Expr = undefined
+prop_Expr (Val n)            = True 
+prop_Expr (Pow n)            = n >= 0
+prop_Expr (Op expr1 _ expr2) = prop_Expr expr1 && prop_Expr expr2
 
 
 --------------------------------------------------------------------------------
@@ -33,12 +35,23 @@ prop_Expr = undefined
 -- You can use Haskell notation for powers: x^2
 -- You should show x^1 as just x.
 
--- instance Show Expr where
---   show = undefined
+instance Show Expr where
+  show (Val n) = show n
+  show (Pow 0) = "1"
+  show (Pow 1) = "x"
+  show (Pow n) = "x^" ++ show n
+  show (Op expr1 AddOp expr2) = show expr1 ++ "+" ++ show expr2
+  show (Op expr1 MulOp expr2) = show_mul expr1 expr2
+
+show_mul :: Expr -> Expr -> String
+show_mul (Op exp1 AddOp exp2) (Op exp3 AddOp exp4) = "(" ++ show (Op exp1 AddOp exp2) ++ ")(" ++ show (Op exp3 AddOp exp4) ++ ")"
+show_mul (Op exp1 AddOp exp2) exp3 = "(" ++ show (Op exp1 AddOp exp2) ++ ")*" ++ show exp3
+show_mul exp1 (Op exp2 AddOp exp3) = show exp1 ++ "(" ++ show (Op exp2 AddOp exp3) ++ ")"
+show_mul exp1 exp2 = show exp1 ++ "*" ++ show exp2
 
 --------------------------------------------------------------------------------
 -- * A4
--- Make Expr and instance of Arbitrary.
+-- Make Expr an instance of Arbitrary.
 -- Now you can check the data type invariant that you defined in A3 using
 -- quickCheck
 
@@ -47,8 +60,10 @@ prop_Expr = undefined
 -- which gives hints to quickCheck on possible smaller expressions that it
 -- could use to find a smaller counterexample for failing tests
 
-instance Arbitrary Expr
-  where arbitrary = undefined
+-- instance Arbitrary Expr
+--   where arbitrary = do
+--     Val x <- choose [0..]
+--     Pow y <- choose [1..]
 
 
 --------------------------------------------------------------------------------
